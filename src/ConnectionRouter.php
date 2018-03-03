@@ -34,19 +34,30 @@ class ConnectionRouter
      */
     public function onData(ConnectionInterface $connection, Field $field, $data)
     {
-        preg_match_all('/^\/match (\d{1,2}) (\d{1,2})$/', $data, $markMatch, PREG_SET_ORDER);
+        preg_match_all('/^\/mark (\d{1,2}) (\d{1,2})$/', $data, $markMatch, PREG_SET_ORDER);
         preg_match_all('/^\/open (\d{1,2}) (\d{1,2})$/', $data, $openMatch, PREG_SET_ORDER);
         preg_match_all('/^\/release (\d{1,2}) (\d{1,2})$/', $data, $releaseMatch, PREG_SET_ORDER);
+        preg_match_all('/^\/help$/', $data, $helpMatch, PREG_SET_ORDER);
         if (!empty($markMatch)) {
             $field->mark($markMatch[0][1], $markMatch[0][2]);
         } elseif (!empty($openMatch)) {
             $field->open($openMatch[0][1], $openMatch[0][2]);
         } elseif (!empty($releaseMatch)) {
             $field->openNeighbors($releaseMatch[0][2], $releaseMatch[0][2]);
+        } elseif (!empty($helpMatch)) {
+            $this->printHelp($connection);
+            return;
         } else {
             throw new MineException('Input not found');
         }
         $connection->write($this->renderer->render($field) . PHP_EOL);
+    }
+
+    private function printHelp(ConnectionInterface $connection)
+    {
+        $connection->write('/mark {row} {column} # mark or unmark cell' . PHP_EOL);
+        $connection->write('/open {row} {column} # open cell' . PHP_EOL);
+        $connection->write('/release {row} {column} # open all cell\'s neighbours' . PHP_EOL);
     }
 
     /**
